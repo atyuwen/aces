@@ -5,7 +5,7 @@ Play with ACES tone mapping in Python.
 - Following is the ACES 1000 nits tone mapping. (Genreated via aces_tonescale_1000nits.py)
 
 <script src="https://www.desmos.com/api/v1.3/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
-<div id="calculator" style="width: 800px; height: 400px;"></div>
+<pre><div id="calculator" style="width: 800px; height: 400px;"></div></pre>
 <script>
     var elt = document.getElementById('calculator');
     var calculator = Desmos.GraphingCalculator(elt);
@@ -30,6 +30,3 @@ Play with ACES tone mapping in Python.
         top: 1100
     });
 </script>
-
-
-
