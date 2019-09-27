@@ -1,26 +1,30 @@
-# ACES tone mapping (1000 nits) combined with a custom input transform.
+# Fit a curve to invert Knarkowicz ACES tone mapping (SDR).
 
-from aceslib.tonescales import *
+def ACES_Knarkowicz(x):
+	a = 2.51;
+	b = 0.03;
+	c = 2.43;
+	d = 0.59;
+	s = 0.14;
+	return (x * ( a * x + b)) / (x * (c * x + d) + s);
 
-def input_transform(x):
-    if x < 1:
-        return x
-    return math.exp(x - 3) + 0.8646 * x
+def ACES_Knarkowicz_inverse(x):
+	"find the inverse by a simple binary search."
+	a = 0.0
+	b = 20.0
+	while b - a > 0.001:
+		m = (a + b) / 2
+		v = ACES_Knarkowicz(m)
+		if v < x:
+			a = m
+		else:
+			b = m
+	return a
 
-print "Engine IDT:"
-for i in range(17):
-    x = i / 2.0
-    y = input_transform(x)
-    print " %10.5f %10.5f" %(x, y)
-
-def tonemapping_1000nits(x):
-    x = input_transform(x)
-    y = segmented_spline_c5_fwd(x)
-    z = segmented_spline_c9_fwd(y, ODT_1000nits)
-    return z
-
-print "   mid-gray:", tonemapping_1000nits(0.18)
-print "paper-white:", tonemapping_1000nits(1.0)
+t0 = ACES_Knarkowicz(1.2)
+t1 = ACES_Knarkowicz_inverse(t0)
+t2 = ACES_Knarkowicz_inverse(1.0)
+print t1, t2
 
 # Plot the mapping via desmos.
 html = '''
@@ -44,20 +48,21 @@ html = '''
         ]
     });
     calculator.setMathBounds({
-        left: -1,
-        right: 10,
-        bottom: -100,
-        top: 1100
+        left: -0.1,
+        right: 1.2,
+        bottom: -1,
+        top: 12
     });
 </script>
 '''
 
+N = 256
+Xs = [i / float(N - 1) for i in range(N)]
 
-Xs = [0.0, 0.01, 0.02, 0.04, 0.06, 0.1, 0.14, 0.18, 0.24, 0.3, 0.36, 0.42, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 Ys = [0.0] * len(Xs)
 for i in range(len(Xs)):
     x = Xs[i]
-    y = tonemapping_1000nits(x)
+    y = ACES_Knarkowicz_inverse(x)
     Ys[i] = y
 
 html = html.replace("$Xs$", str(Xs))
@@ -76,4 +81,17 @@ ret = utils.rationalfit.ratfit(Xs, Ys, 2, 2)
 print ret
 print "(%f * x^2 + %f * x + %f) / (%f * x^2 + %f * x + %f)" % (ret[5], ret[6], ret[7], ret[2], ret[3], ret[4])
 
+def fitted_curve(x):
+	return float(ret[5] * x * x + ret[6] * x + ret[7]) / (ret[2] * x * x + ret[3] * x + ret[4])
+
+max_error = 0.0
+for i in range(len(Xs)):
+    x = Xs[i]
+    y0 = ACES_Knarkowicz_inverse(x)
+    y1 = fitted_curve(x)
+    error = abs(y0 - y1)
+    print "x %f y0 %f y1 %f err: %f" % (x, y0, y1, error)
+    max_error = max(max_error, abs(y0 - y1))
+
+print "max error: ", max_error
 

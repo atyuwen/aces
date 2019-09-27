@@ -1,3 +1,4 @@
+# ACES tone mapping (1000 nits) with a scaled scRGB input.
 from aceslib.tonescales import *
 
 input_scale = 2.64

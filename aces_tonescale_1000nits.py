@@ -1,3 +1,5 @@
+# Stanard ACES 1000 nits curve.
+
 from aceslib.tonescales import *
 
 def aces_tonescale_1000nits(x):
